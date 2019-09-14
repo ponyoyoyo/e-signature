@@ -1,0 +1,139 @@
+<h1>Esignature#index</h1>
+<p>Find me in app/views/esignature/index.html.erb</p>
+
+<div class="screen-height bg-secondary p-4">
+        <%# <div class="signature-pad border border-dark"> %>
+            <%#= form_for @user do |f| %>
+            <%#= f.signature_field :signature %>
+            <%#= f.submit %>
+            <%# end %>
+            <%#= image_tag @user.signature %>
+        <%#</div> %>
+    <div class="d-flex flex-column align-items-center">
+        <div id="signature-pad" class="signature-pad d-flex flex-column align-items-center justify-content-between">
+            <div class="signature-pad-body border border-dark">
+                <canvas></canvas>
+            </div>
+            <div class="signature-pad-caption">
+                Sign above
+            </div>
+            <div class="signature-pad-footer d-flex justify-content-between">
+                <div>
+                    <button type="button" class="button-clear" data-action="clear">Clear</button>
+                    <button type="button" class="button-color" data-action="color">Change color</button>
+                    <button type="button" class="button-undo" data-action="undo">Undo</button>
+                </div>
+                <div>
+                    <button type="button" class="button-save" data-action="save-png">Save as PNG</button>
+                    <button type="button" class="button-save" data-action="save-jpg">Save as JPG</button>
+                    <button type="button" class="button-save" data-action="save-svg">Save as SVG</button>
+                </div>
+            </div>
+        </div>
+    </div>    
+</div>
+ 
+
+<script>
+const wrapper = document.getElementById("signature-pad");
+const clearButton = wrapper.querySelector("[data-action=clear]");
+const colorButton = wrapper.querySelector("[data-action=color]");
+const undoButton = wrapper.querySelector("[data-action=undo]");
+const savePNGButton = wrapper.querySelector("[data-action=save-png]");
+const saveJPGButton = wrapper.querySelector("[data-action=save-jpg]");
+const saveSVGButton = wrapper.querySelector("[data-action=save-svg]");
+const canvas = wrapper.querySelector("canvas");
+const signaturePad = new SignaturePad(canvas, {
+    backgroundColor: 'rgb(255, 255, 255)'
+});
+
+const resizeCanvas = () => {
+    var ratio =  Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    canvas.getContext("2d").scale(ratio, ratio);
+    signaturePad.clear(); // otherwise isEmpty() might return incorrect value
+}
+
+window.onresize = resizeCanvas;
+resizeCanvas();
+
+
+
+
+clearButton.addEventListener('click', (event) => {
+    signaturePad.clear();
+});
+
+undoButton.addEventListener('click', (event) => {
+    const data = signaturePad.toData();
+    if (data) {    
+        data.pop();
+        signaturePad.fromData(data);
+    }
+});
+
+colorButton.addEventListener('click', (event) => {
+    const r = Math.round(Math.random() * 255);
+    const g = Math.round(Math.random() * 255);
+    const b = Math.round(Math.random() * 255);
+    const color = `rgb(${r},${g},${b})`;
+    console.log(color);
+    signaturePad.penColor = color;
+});
+
+savePNGButton.addEventListener('click', (event) => {
+    if (signaturePad.isEmpty()) {
+        return alert('Please provide a signature first');
+    } 
+    const dataUrl = signaturePad.toDataURL();
+    download(dataUrl, 'signature.png');
+});
+
+saveJPGButton.addEventListener('click', (event) => {
+    if (signaturePad.isEmpty()) {
+        return alert('Please provide a signature first.');        
+    }
+    const dataUrl = signaturePad.toDataURL("image/jpeg");
+    download(dataUrl, 'signature.jpg'); 
+});
+
+saveSVGButton.addEventListener('click', (event) => {
+    if (signaturePad.isEmpty()) {
+        return alert('Please provide a signature first.');        
+    }
+    const dataUrl = signaturePad.toDataURL("image/svg+xml");
+    download(dataUrl, 'signature.svg');
+})
+
+const download = (dataUrl, filename) => {
+    if(navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
+        return window.open(dataUrl);
+    }
+    const blob = dataURLToBlob(dataUrl);
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.style = 'display: none';
+    a.href = url;
+    a.download = filename;
+
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+const dataURLToBlob = (dataUrl) => {
+    const parts = dataUrl.split(';base64,');
+    const contentType = parts[0].split(':')[1];
+    const raw = window.atob(parts[1]);
+    const rawLength = raw.length;
+    const uInt8Array = new Uint8Array(rawLength);
+
+    for (let i=0; i < rawLength; i++) {
+        uInt8Array[i] = raw.charCodeAt(i);
+    }
+
+    return new Blob([uInt8Array], { type: contentType });
+}
+</script>

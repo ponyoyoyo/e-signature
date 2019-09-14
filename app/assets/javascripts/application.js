@@ -14,3 +14,5 @@
 //= require activestorage
 //= require turbolinks
 //= require_tree .
+//= require john_hancock
+//= require bootstrap-sprockets
